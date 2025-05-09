@@ -1,4 +1,4 @@
-class FilaPrioridade {
+export class FilaPrioridade {
     constructor(prioridade, timeSlice){
         this.processos = []
         this.prioridade = prioridade
@@ -8,11 +8,12 @@ class FilaPrioridade {
 
     adicionarProcesso(processo){
         this.processos.push(processo)
+        //console.log(this.processos)
         this.qtdProcessos++
-        this.logEvent(`Processo ${processo.pid} adicionado na fila ${processo.prioridade}`);
     }
 
     retirarProcesso(){
-        return this.processos.shift()
+        const processo = this.processos.shift()
+        return processo
     }
 }

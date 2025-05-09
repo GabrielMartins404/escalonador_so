@@ -1,5 +1,9 @@
-class Escalonador {
-    constructor(timeSlice, tempoIo){
+import { Processador } from "./Processador.js"
+import { Processo } from "./Processo.js"
+import { FilaPrioridade } from "./FilaPrioridade.js"
+
+export class Escalonador {
+    constructor(timeSliceTotal, tempoIo){
         this.filasPronto = {
             1: new FilaPrioridade(1, 40),
             2: new FilaPrioridade(2, 30),
@@ -7,7 +11,7 @@ class Escalonador {
             4: new FilaPrioridade(4, 10)
         }
         this.filaEspera = []
-        this.timeSlice = timeSlice
+        this.timeSliceTotal = timeSliceTotal
         this.tempoIo = tempoIo
         this.processador = new Processador()
     }
@@ -28,46 +32,80 @@ class Escalonador {
         }
     }
 
+    //Cálculo da distribuição dos timesSlices de acordo com os processos
+    calcularDistribuicao(){
+        //Identifica processos prontos
+        const filasAtivas = Object.values(this.filasPronto).filter(fila => fila.qtdProcessos > 0) //Converte a fila em array e filtra somente as que tem processo
+        
+        //Retorna nada se não tiver nenhuma fila
+        if(filasAtivas.length == 0){
+            return {}
+        }
+
+        //Calcula o percentua total das filas ativas
+        const percentualTotal = filasAtivas.reduce((total, fila) => total + fila.timeSlice, 0) //Soma todos os percentuais de filas ativas
+
+        const fatorNormalizacao = 100 / percentualTotal
+
+        const distribuicao = {}
+        filasAtivas.forEach(fila => {
+            //Ajusta o percentual atual garantindo a redistribuição dos valores
+            const percentualAjustado = fila.timeSlice * fatorNormalizacao
+
+            distribuicao[fila.prioridade] = {
+                percentual: percentualAjustado,
+                timeSliceFila: this.timeSliceTotal * percentualAjustado,
+                timeSliceProcesso: (this.timeSliceTotal * percentualAjustado / 100) / fila.qtdProcessos //Aqui é feito a divisão do timeSlice igualmente para cada processo
+            }
+
+            //Aqui pode surgir um problema, onde o tempo para finalizar um processo é menor que o tempo distribuido. Isso pode causar ociosidade na CPU. Depois avaliar isso
+        })
+
+        return distribuicao
+    }
+
     //Defino o timeSlice das filas
     definirTimeSliceFilas(){
-        const fila1 = this.filasPronto[1]
-        const fila2 = this.filasPronto[2]
-        const fila3 = this.filasPronto[3]
-        const fila4 = this.filasPronto[4]
+       const distribuicao = this.calcularDistribuicao()
 
-        //Fila1 deverá pegar 40% do meu timeSlice geral. Desse modo, esses 40% deverá ser distribuido de forma igualitária para os processos da fila
-        if(fila1.qtdProcessos > 0){
-            fila1.timeSlice = (this.timeSlice*0.4) / fila1.qtdProcessos
+       //Atualiza cada fila
+       for(const [prioridade, fila] of Object.entries(this.filasPronto)){
+        if(distribuicao[prioridade]){
+            fila.timeSlice = distribuicao[prioridade].timeSliceFila
+            fila.processos.map((processo) => {
+                processo.timeSlice = distribuicao[prioridade].timeSliceProcesso
+            })
         }else{
-            fila1.timeSlice = 0
+            fila.timeSlice = 0
         }
-
-        if(fila2.qtdProcessos > 0){
-            fila2.timeSlice = (this.timeSlice*0.3) / fila3.qtdProcessos
-        }else{
-            fila2.timeSlice = 0
-        }
-
-        if(fila3.qtdProcessos > 0){
-            fila3.timeSlice = (this.timeSlice*0.2) / fila3.qtdProcessos
-        }else{
-            fila3.timeSlice = 0
-        }
-
-        if(fila4.qtdProcessos > 0){
-            fila4.timeSlice = (this.timeSlice*0.1) / fila4.qtdProcessos
-        }else{
-            fila4.timeSlice = 0
-        }
+       }
         
+    }
+
+    obterProximoProcesso(){
+        for(var prioridade = 1; prioridade <= 4; prioridade++){
+            const fila = this.filasPronto[prioridade]
+            if(fila.qtdProcessos > 0 && fila.timeSlice > 0){
+                return{
+                    processo: fila.retirarProcesso(),
+                    timeSlice: fila.timeSlice
+                }
+            }
+        }
+        return null
     }
 
     escalonar(){
         // Se o processador está ocioso, busca o próximo processo
         if(!this.processador.emUso){
             this.definirTimeSliceFilas()
-            for(var fila = 1; fila <= 4; fila++){
-                
+            const proximo = this.obterProximoProcesso()
+            
+            if(proximo){
+                console.log(proximo.processo)
+                console.log(this.processador)
+                this.processador.adicionarProcesso(proximo.processo)
+                console.log(this.processador)
             }
         }
         

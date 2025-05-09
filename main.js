@@ -1,6 +1,15 @@
-const processo1 = new Processo('10', 1, 'IO', 600, 0, 0, 0)
-const escalonador = new Escalonador(1000, 10000)
+import { Escalonador } from "./Escalonador.js";
+import { Processo } from "./Processo.js";
 
-escalonador.adicionarProcessoEspera(processo1)
+const escalonador = new Escalonador(1000, 50); // Time slice total de 1000ms, tempo I/O de 50ms
 
-console.log(escalonador.filaEspera)
+// Adiciona alguns processos de exemplo
+escalonador.adicionarProcessoPronto(new Processo(1, 1, 1,200 ));
+//escalonador.adicionarProcessoPronto(new Processo(2, 2, 300));
+//escalonador.adicionarProcessoPronto(new Processo(3, 3, 1,150));
+//escalonador.adicionarProcessoPronto(new Processo(4, 4, 1,400));
+
+escalonador.escalonar()
+//
+
+

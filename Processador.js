@@ -1,4 +1,4 @@
-class Processador{
+export class Processador{
     constructor(){
         this.processoEmExecucao = null,
         this.emUso = false
