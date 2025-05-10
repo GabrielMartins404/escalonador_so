@@ -1,9 +1,10 @@
 export class FilaPrioridade {
-    constructor(prioridade, timeSlice){
+    constructor(prioridade, percentualBase){
         this.processos = []
         this.prioridade = prioridade
         this.qtdProcessos = 0
-        this.timeSlice = timeSlice
+        this.percentualBase = percentualBase
+        this.timeSliceFila = 0
     }
 
     adicionarProcesso(processo){

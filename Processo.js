@@ -8,19 +8,17 @@ export class Processo {
         this.tempoEmExecucao = 0
         this.tempoUltimaExecucao = 0
         this.timeSliceProcesso = 0
+        this.isConcluido = false
     }
 
     executar(tempo){
         this.tempoEmExecucao += tempo
-        this.tempoParaProcessamento -= tempo
+        //this.tempoParaProcessamento -= tempo
         this.tempoUltimaExecucao = 0
-    }
 
-    estaConcluido(){
-        if(this.tempoEmExecucao < this.tempoNecessario){
-            return false
-        }else{
-            return true
+        //Verifico se o tempo que ele passa executando é igual ou maior ao tempo que ele necessita. Se sim, é porque o processo foi concluido
+        if(this.tempoEmExecucao >= this.tempoNecessario){
+            this.isConcluido = true
         }
     }
 

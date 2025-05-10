@@ -1,5 +1,4 @@
 import { Processador } from "./Processador.js"
-import { Processo } from "./Processo.js"
 import { FilaPrioridade } from "./FilaPrioridade.js"
 
 export class Escalonador {
@@ -10,14 +9,21 @@ export class Escalonador {
             3: new FilaPrioridade(3, 20),
             4: new FilaPrioridade(4, 10)
         }
+        this.prioridadeAtual = 0
+        this.tempoPrioridade = 0
         this.filaEspera = []
         this.timeSliceTotal = timeSliceTotal
         this.tempoIo = tempoIo
         this.processador = new Processador()
+        this.processoConcluido = []
     }
 
     adicionarProcessoEspera(processo){
         this.filaEspera.push(processo)
+    }
+
+    adicionarProcessoConcluido(processo){
+        this.processoConcluido.push(processo)
     }
 
     adicionarProcessoPronto(processo){
@@ -43,18 +49,17 @@ export class Escalonador {
         }
 
         //Calcula o percentua total das filas ativas
-        const percentualTotal = filasAtivas.reduce((total, fila) => total + fila.timeSlice, 0) //Soma todos os percentuais de filas ativas
+        const percentualTotal = filasAtivas.reduce((total, fila) => total + fila.percentualBase, 0) //Soma todos os percentuais de filas ativas
 
         const fatorNormalizacao = 100 / percentualTotal
 
         const distribuicao = {}
         filasAtivas.forEach(fila => {
             //Ajusta o percentual atual garantindo a redistribuição dos valores
-            const percentualAjustado = fila.timeSlice * fatorNormalizacao
+            const percentualAjustado = fila.percentualBase * fatorNormalizacao
 
             distribuicao[fila.prioridade] = {
                 percentual: percentualAjustado,
-                timeSliceFila: this.timeSliceTotal * percentualAjustado,
                 timeSliceProcesso: (this.timeSliceTotal * percentualAjustado / 100) / fila.qtdProcessos //Aqui é feito a divisão do timeSlice igualmente para cada processo
             }
 
@@ -71,43 +76,97 @@ export class Escalonador {
        //Atualiza cada fila
        for(const [prioridade, fila] of Object.entries(this.filasPronto)){
         if(distribuicao[prioridade]){
-            fila.timeSlice = distribuicao[prioridade].timeSliceFila
+            fila.timeSliceFila = distribuicao[prioridade].timeSliceProcesso
+            //Cada processo recebe a informação de quanto tempo deverá executar. 
             fila.processos.map((processo) => {
-                processo.timeSlice = distribuicao[prioridade].timeSliceProcesso
+                processo.timeSliceProcesso = distribuicao[prioridade].timeSliceProcesso
             })
         }else{
-            fila.timeSlice = 0
+            fila.timeSliceFila = 0
         }
        }
-        
     }
 
     obterProximoProcesso(){
-        for(var prioridade = 1; prioridade <= 4; prioridade++){
-            const fila = this.filasPronto[prioridade]
-            if(fila.qtdProcessos > 0 && fila.timeSlice > 0){
+
+
+        // Se ainda há tempo alocado para a prioridade atual
+        if(this.tempoPrioridade > 0){ //O primeiro ciclo, não entra aqui. Só a partir do segundo
+            const filaAtual = this.filasPronto[this.prioridadeAtual]
+            if(filaAtual.qtdProcessos > 0 && filaAtual.timeSliceFila > 0){ //Verifico se há processos e o timeSlice é zero. Sempre será zero porque é definido na função acima
+                this.tempoPrioridade -= filaAtual.timeSliceFila //Decrementa o timeSlice de cada processo
                 return{
-                    processo: fila.retirarProcesso(),
-                    timeSlice: fila.timeSlice
+                    processo: filaAtual.retirarProcesso(),
+                    timeSlice: filaAtual.timeSliceFila
                 }
             }
         }
+        //É feito 4 tentativas para verifica se há alguma fila com processo
+        let tentativas = 0
+        while(tentativas < 4){
+            console.log("prioridade atual", this.prioridadeAtual)
+            this.prioridadeAtual = this.prioridadeAtual % 4 + 1 //Aqui, garanto que o intervalo da prioridade esteja somente entre 1 - 4
+            const fila = this.filasPronto[this.prioridadeAtual]
+            // console.log(`Prioridade atual ${this.prioridadeAtual}`)
+            // console.log(fila)
+
+            if(fila.qtdProcessos > 0 && fila.timeSliceFila > 0){
+                // Redefine o tempo alocado para esta prioridade
+                this.tempoPrioridade = this.timeSliceTotal * (fila.percentualBase / 100)
+                return {
+                    processo: fila.retirarProcesso(),
+                    timeSlice: fila.timeSliceFila
+                }
+            }
+
+            tentativas++
+        }
         return null
+
     }
 
     escalonar(){
         // Se o processador está ocioso, busca o próximo processo
         if(!this.processador.emUso){
             this.definirTimeSliceFilas()
+            console.log("Buscando novos processos")
             const proximo = this.obterProximoProcesso()
-            
-            if(proximo){
-                console.log(proximo.processo)
-                console.log(this.processador)
+            if(proximo.processo != undefined || proximo.processo != null){
                 this.processador.adicionarProcesso(proximo.processo)
-                console.log(this.processador)
+            }else{
+                console.log("Nenhum processo para execução")
             }
+        }else{
+            //Executa o processo atual
+            this.processador.executarProcesso(100) //Quero que ele execute de 10 em 10
+            if(this.processador.tempoRestanteProcessamento <= 0){
+                console.log(`Processo ${this.processador.processoEmExecucao.pid} terminou seu timeSlice`)
+                const processo = this.processador.retirarProcesso() //Retiro o processo da CPU
+                //Se o processo não foi concluido, deverá voltar para alguma das filas abaixo
+                if(processo.tipoProcesso == 'IO'){ //Se o processo for IO, vai para espera
+                    this.adicionarProcessoEspera(processo)
+                }else{
+                    this.adicionarProcessoPronto(processo)
+                }
+            }
+
+            if(this.processador.processoEmExecucao){
+                console.log("Há um processo concluido")
+                if(this.processador.processoEmExecucao.isConcluido){ //Verifico se o proecesso foi concluido
+                    console.log(`O processo ${this.processador.processoEmExecucao.pid} foi concluido`)
+                    const processo = this.processador.retirarProcesso() //Retiro o processo da CPU
+                    this.adicionarProcessoConcluido(processo)
+                }
+            }
+            
         }
         
+    }
+
+    // Método para simulação contínua
+    iniciarSimulacao() {
+        setInterval(() => {
+            this.escalonar();
+        }, 2000); // Executa a cada 100ms
     }
 }
