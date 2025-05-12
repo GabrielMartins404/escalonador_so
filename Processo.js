@@ -9,6 +9,7 @@ export class Processo {
         this.tempoUltimaExecucao = 0
         this.timeSliceProcesso = 0
         this.isConcluido = false
+        this.tempoEmEspera = 0
     }
 
     executar(tempo){

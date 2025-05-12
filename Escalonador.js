@@ -26,6 +26,24 @@ export class Escalonador {
         this.processoConcluido.push(processo)
     }
 
+    incrementarTempoEspera(){
+        if(this.filaEspera.length > 0){
+            this.filaEspera.map((processo, index) => {
+                if(processo.tempoEmEspera < this.tempoIo){
+                    processo.tempoEmEspera += 1
+                    console.log(`===== Processo ${processo.pid} incrementou. Falta ${this.tempoIo - processo.tempoEmEspera} =====`)
+                }else{
+                    console.log(`===== Processo ${processo.pid} saiu da fila de espera =====`)
+                    this.adicionarProcessoPronto(processo)
+                    this.filaEspera.splice(index, 1)
+                }
+            })
+        }else{
+            console.log("===== Não há processos em espera ====")
+        }
+    }
+
+
     adicionarProcessoPronto(processo){
         if(processo.prioridade == 1){
             this.filasPronto[1].adicionarProcesso(processo) //Adiciono o processo na fila de prioridade
@@ -35,6 +53,20 @@ export class Escalonador {
             this.filasPronto[3].adicionarProcesso(processo)
         }else{
             this.filasPronto[4].adicionarProcesso(processo)
+        }
+    }
+
+    //Esse método serve somente para garanti que um processo concluido não conste em nenhuma outra fila
+    removerProcessoDeTodasFilas(pid) {
+        // Remove da fila de espera
+        this.filaEspera = this.filaEspera.filter(p => p.pid !== pid);
+        
+        // Remove de todas as filas de pronto
+        for(const prioridade in this.filasPronto) {
+            this.filasPronto[prioridade].processos = 
+                this.filasPronto[prioridade].processos.filter(p => p.pid !== pid);
+            this.filasPronto[prioridade].qtdProcessos = 
+                this.filasPronto[prioridade].processos.length;
         }
     }
 
@@ -121,41 +153,38 @@ export class Escalonador {
 
             tentativas++
         }
-        return null
+       return { processo: null, timeSlice: 0 };
 
     }
 
     escalonar(){
+        this.incrementarTempoEspera() //Toda a vez que escalona, verifica se incrementa o tempo de processos IO em espera
         // Se o processador está ocioso, busca o próximo processo
         if(!this.processador.emUso){
             this.definirTimeSliceFilas()
             console.log("Buscando novos processos")
             const proximo = this.obterProximoProcesso()
-            if(proximo.processo != undefined || proximo.processo != null){
-                this.processador.adicionarProcesso(proximo.processo)
+            if(proximo?.processo) {
+                this.processador.adicionarProcesso(proximo.processo);
             }else{
                 console.log("Nenhum processo para execução")
             }
         }else{
             //Executa o processo atual
             this.processador.executarProcesso(100) //Quero que ele execute de 10 em 10
-            if(this.processador.tempoRestanteProcessamento <= 0){
-                console.log(`Processo ${this.processador.processoEmExecucao.pid} terminou seu timeSlice`)
+            if(this.processador.tempoRestanteProcessamento <= 0 || (this.processador.processoEmExecucao && this.processador.processoEmExecucao.isConcluido)){
+                //console.log(`Processo ${this.processador.processoEmExecucao.pid} terminou seu timeSlice`)
                 const processo = this.processador.retirarProcesso() //Retiro o processo da CPU
                 //Se o processo não foi concluido, deverá voltar para alguma das filas abaixo
-                if(processo.tipoProcesso == 'IO'){ //Se o processo for IO, vai para espera
+                if(processo.isConcluido){
+                    console.log(`O processo ${processo.pid} foi concluído`);
+                    this.adicionarProcessoConcluido(processo);
+                    // Remove o processo de todas as filas possíveis
+                    this.removerProcessoDeTodasFilas(processo.pid);
+                }else if(processo.tipoProcesso == 'IO'){ //Se o processo for IO, vai para espera
                     this.adicionarProcessoEspera(processo)
                 }else{
                     this.adicionarProcessoPronto(processo)
-                }
-            }
-
-            if(this.processador.processoEmExecucao){
-                console.log("Há um processo concluido")
-                if(this.processador.processoEmExecucao.isConcluido){ //Verifico se o proecesso foi concluido
-                    console.log(`O processo ${this.processador.processoEmExecucao.pid} foi concluido`)
-                    const processo = this.processador.retirarProcesso() //Retiro o processo da CPU
-                    this.adicionarProcessoConcluido(processo)
                 }
             }
             
@@ -167,6 +196,6 @@ export class Escalonador {
     iniciarSimulacao() {
         setInterval(() => {
             this.escalonar();
-        }, 2000); // Executa a cada 100ms
+        }, 2000); // Executa a cada 2000ms
     }
 }
