@@ -1,7 +1,7 @@
 import { Escalonador } from "./Escalonador.js";
 import { Processo } from "./Processo.js";
 
-const escalonador = new Escalonador(1000, 10); // Time slice total de 1000ms, tempo I/O de 50ms
+const escalonador = new Escalonador(1000, 10); // Time slice total de 1000ms, tempo I/O de 10ms
 
 // Adiciona alguns processos de exemplo
 escalonador.adicionarProcessoPronto(new Processo(1, 1, 'CPU',100));

@@ -10,7 +10,7 @@ export class Escalonador {
             4: new FilaPrioridade(4, 10)
         }
         this.prioridadeAtual = 0
-        this.tempoPrioridade = 0
+        this.tempoPrioridade = 0 //Tempo para cada timeSlice de acordo com a fila
         this.filaEspera = []
         this.timeSliceTotal = timeSliceTotal
         this.tempoIo = tempoIo
@@ -120,7 +120,6 @@ export class Escalonador {
     }
 
     obterProximoProcesso(){
-
 
         // Se ainda há tempo alocado para a prioridade atual
         if(this.tempoPrioridade > 0){ //O primeiro ciclo, não entra aqui. Só a partir do segundo
