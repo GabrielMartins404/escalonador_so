@@ -11,7 +11,7 @@ export class Processador{
         console.log(" ===== =================")
         this.processoEmExecucao = processo
         this.emUso = true
-        this.tempoRestanteProcessamento = processo.timeSliceProcesso
+        this.tempoRestanteProcessamento = processo.tempoCpuProcesso
     }
 
     retirarProcesso(){

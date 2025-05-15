@@ -4,7 +4,7 @@ export class FilaPrioridade {
         this.prioridade = prioridade
         this.qtdProcessos = 0
         this.percentualBase = percentualBase
-        this.timeSliceFila = 0
+        this.tempoCpuFila = 0
     }
 
     adicionarProcesso(processo){
