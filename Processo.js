@@ -1,15 +1,16 @@
 export class Processo {
-    constructor(pid, prioridade, tipoProcesso, tempoNecessario){
+    constructor(pid, prioridade, tipoProcesso, tempoNecessario, statusAtual){
         this.pid = pid
         this.prioridade = prioridade
         this.tipoProcesso = tipoProcesso
         this.tempoNecessario = tempoNecessario
+        this.statusAtual = statusAtual
         this.tempoDeCriacao = 0
         this.tempoEmExecucao = 0
-        this.tempoUltimaExecucao = 0
         this.tempoCpuProcesso = 0
         this.isConcluido = false
         this.tempoEmEspera = 0
+        this.tempoTotalEmEspera = 0
     }
 
     executar(tempo){

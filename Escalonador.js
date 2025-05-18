@@ -9,9 +9,10 @@ export class Escalonador {
             2: new FilaPrioridade(2, 20),
             1: new FilaPrioridade(1, 10)
         }
-        this.prioridadeAtual = 4
+        this.prioridadeAtual = 1
         this.tempoPrioridade = 0 //Tempo para cada tempoCpu de acordo com a fila
         this.filaEspera = []
+        this.logHistorico = []
         this.tempoCpuTotal = tempoCpuTotal
         this.tempoIo = tempoIo
         this.processador = new Processador()
@@ -20,31 +21,59 @@ export class Escalonador {
 
     adicionarProcessoEspera(processo){
         this.filaEspera.push(processo)
+        this.adicionarHistorico(processo.pid, 'Processo adicionado em espera')
     }
 
     adicionarProcessoConcluido(processo){
         this.processoConcluido.push(processo)
+        this.adicionarHistorico(processo.pid, 'Processo concluído')
     }
 
+    adicionarHistorico(pid, evento){
+        const log = {
+            pid: pid,
+            evento: evento,
+            horario: new Date().toLocaleTimeString()
+        }
+
+        this.logHistorico.push(log)
+    }
     incrementarTempoEspera(){
         if(this.filaEspera.length > 0){
             this.filaEspera.map((processo, index) => {
                 if(processo.tempoEmEspera < this.tempoIo){
                     processo.tempoEmEspera += 1
-                    console.log(`===== Processo ${processo.pid} incrementou. Falta ${this.tempoIo - processo.tempoEmEspera} =====`)
+                    processo.tempoTotalEmEspera += 1
+                    //console.log(`===== Processo ${processo.pid} incrementou. Falta ${this.tempoIo - processo.tempoEmEspera} =====`)
                 }else{
-                    console.log(`===== Processo ${processo.pid} saiu da fila de espera =====`)
+                    //console.log(`===== Processo ${processo.pid} saiu da fila de espera =====`)
                     this.adicionarProcessoPronto(processo)
                     this.filaEspera.splice(index, 1)
                 }
             })
         }else{
-            console.log("===== Não há processos em espera ====")
+            //console.log("===== Não há processos em espera ====")
+        }
+    }
+
+    incrementarTempoDeCriacaoProcessos(){
+        this.filaEspera.map(p => {
+            p.tempoDeCriacao += 1
+        });
+        
+        // Remove de todas as filas de pronto
+        for(const prioridade in this.filasPronto) {
+            this.filasPronto[prioridade].processos.map(p => {
+                p.tempoDeCriacao += 1
+            })
+           
         }
     }
 
 
     adicionarProcessoPronto(processo){
+        processo.statusAtual = 'Pronto'
+        processo.tempoEmEspera = 0
         if(processo.prioridade == 1){
             this.filasPronto[1].adicionarProcesso(processo) //Adiciono o processo na fila de prioridade
         }else if(processo.prioridade == 2){
@@ -54,13 +83,18 @@ export class Escalonador {
         }else{
             this.filasPronto[4].adicionarProcesso(processo)
         }
+
+        this.adicionarHistorico(processo.pid, 'Processo adicionado em Pronto')
     }
 
     //Esse método serve somente para garanti que um processo concluido não conste em nenhuma outra fila
     removerProcessoDeTodasFilas(pid) {
         // Remove da fila de espera
+        if(this.processador.processoEmExecucao?.pid === pid){
+            this.processador.retirarProcesso()
+        }
         this.filaEspera = this.filaEspera.filter(p => p.pid !== pid);
-        
+        console.log("Oi bb")
         // Remove de todas as filas de pronto
         for(const prioridade in this.filasPronto) {
             this.filasPronto[prioridade].processos = 
@@ -68,6 +102,9 @@ export class Escalonador {
             this.filasPronto[prioridade].qtdProcessos = 
                 this.filasPronto[prioridade].processos.length;
         }
+
+        
+        this.adicionarHistorico(pid, 'Processo finalizado manualmente')
     }
 
     //Cálculo da distribuição dos timesSlices de acordo com os processos
@@ -89,7 +126,8 @@ export class Escalonador {
         filasAtivas.forEach(fila => {
             //Ajusta o percentual atual garantindo a redistribuição dos valores
             const percentualAjustado = fila.percentualBase * fatorNormalizacao
-
+            //console.log('Quantidade', fila.qtdProcessos)
+            
             distribuicao[fila.prioridade] = {
                 percentual: percentualAjustado,
                 tempoCpuProcesso: (this.tempoCpuTotal * percentualAjustado / 100) / fila.qtdProcessos //Aqui é feito a divisão do tempoCpu igualmente para cada processo
@@ -104,18 +142,17 @@ export class Escalonador {
     //Defino o tempoCpu das filas
     definirTempoCpuFilas(){
        const distribuicao = this.calcularDistribuicao()
-
        //Atualiza cada fila
        for(const [prioridade, fila] of Object.entries(this.filasPronto)){
-        if(distribuicao[prioridade]){
-            fila.tempoCpuFila = distribuicao[prioridade].tempoCpuProcesso
-            //Cada processo recebe a informação de quanto tempo deverá executar. 
-            fila.processos.map((processo) => {
-                processo.tempoCpuProcesso = distribuicao[prioridade].tempoCpuProcesso
-            })
-        }else{
-            fila.tempoCpuFila = 0
-        }
+            if(distribuicao[prioridade]){
+                fila.tempoCpuFila = distribuicao[prioridade].tempoCpuProcesso
+                //Cada processo recebe a informação de quanto tempo deverá executar. 
+                fila.processos.map((processo) => {
+                    processo.tempoCpuProcesso = distribuicao[prioridade].tempoCpuProcesso
+                })
+            }else{
+                fila.tempoCpuFila = 0
+            }
        }
     }
 
@@ -135,11 +172,11 @@ export class Escalonador {
         //É feito 4 tentativas para verifica se há alguma fila com processo
         let tentativas = 0
         while(tentativas < 4){
-            console.log("prioridade atual", this.prioridadeAtual)
+            //console.log("prioridade atual", this.prioridadeAtual)
             this.prioridadeAtual = this.prioridadeAtual === 1 ? 4 : this.prioridadeAtual - 1 
             const fila = this.filasPronto[this.prioridadeAtual]
-            // console.log(`Prioridade atual ${this.prioridadeAtual}`)
-            // console.log(fila)
+            //// console.log(`Prioridade atual ${this.prioridadeAtual}`)
+            //// console.log(fila)
 
             if(fila.qtdProcessos > 0 && fila.tempoCpuFila > 0){
                 // Redefine o tempo alocado para esta prioridade
@@ -157,6 +194,7 @@ export class Escalonador {
     }
 
     escalonar(){
+        this.incrementarTempoDeCriacaoProcessos()
         this.incrementarTempoEspera() //Toda a vez que escalona, verifica se incrementa o tempo de processos IO em espera
         // Se o processador está ocioso, busca o próximo processo
         if(!this.processador.emUso){
@@ -164,23 +202,28 @@ export class Escalonador {
             console.log("Buscando novos processos")
             const proximo = this.obterProximoProcesso()
             if(proximo?.processo) {
+                this.adicionarHistorico(proximo?.processo.pid, 'Processo adicionado em execução')
                 this.processador.adicionarProcesso(proximo.processo);
             }else{
+
                 console.log("Nenhum processo para execução")
             }
         }else{
             //Executa o processo atual
-            this.processador.executarProcesso(100) //Quero que ele execute de 10 em 10
+            this.processador.executarProcesso(1) //Quero que ele execute de 10 em 10
+            this.adicionarHistorico(this.processador.processoEmExecucao.pid, 'Executou 1s')
             if(this.processador.tempoRestanteProcessamento <= 0 || (this.processador.processoEmExecucao && this.processador.processoEmExecucao.isConcluido)){
-                //console.log(`Processo ${this.processador.processoEmExecucao.pid} terminou seu tempoCpu`)
+                ////console.log(`Processo ${this.processador.processoEmExecucao.pid} terminou seu tempoCpu`)
                 const processo = this.processador.retirarProcesso() //Retiro o processo da CPU
                 //Se o processo não foi concluido, deverá voltar para alguma das filas abaixo
                 if(processo.isConcluido){
-                    console.log(`O processo ${processo.pid} foi concluído`);
+                    //console.log(`O processo ${processo.pid} foi concluído`);
+                    processo.statusAtual = 'Concluído'
                     this.adicionarProcessoConcluido(processo);
                     // Remove o processo de todas as filas possíveis
                     this.removerProcessoDeTodasFilas(processo.pid);
-                }else if(processo.tipoProcesso == 'IO'){ //Se o processo for IO, vai para espera
+                }else if(processo.tipoProcesso == 'I/O-bound'){ //Se o processo for IO, vai para espera
+                    processo.statusAtual = 'Em espera'
                     this.adicionarProcessoEspera(processo)
                 }else{
                     this.adicionarProcessoPronto(processo)

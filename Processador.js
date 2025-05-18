@@ -6,10 +6,11 @@ export class Processador{
     }
 
     adicionarProcesso(processo){
-        console.log(" ===== Novo processo adicionado =====")
-        console.log(processo)
-        console.log(" ===== =================")
+        // console.log(" ===== Novo processo adicionado =====")
+        // console.log(processo)
+        // console.log(" ===== =================")
         this.processoEmExecucao = processo
+        processo.statusAtual = 'Em execução'
         this.emUso = true
         this.tempoRestanteProcessamento = processo.tempoCpuProcesso
     }
@@ -28,7 +29,8 @@ export class Processador{
         //A cpu recebe quanto tempo deverá executar um processo
         this.processoEmExecucao.executar(tempo)
         this.tempoRestanteProcessamento -= tempo //Aqui decrementa o tempo restante do processamento definido pelo escalonador
-        console.log('O processo abaixo está executando: ', this.tempoRestanteProcessamento, ' segundos')
-        console.log(this.processoEmExecucao)
+        this.processoEmExecucao.tempoDeCriacao += 1
+        // console.log('O processo abaixo está executando: ', this.tempoRestanteProcessamento, ' segundos')
+        // console.log(this.processoEmExecucao)
     }
 }

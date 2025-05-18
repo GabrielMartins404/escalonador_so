@@ -15,6 +15,9 @@ export class FilaPrioridade {
 
     retirarProcesso(){
         const processo = this.processos.shift()
+        if(processo){
+            this.qtdProcessos--
+        }
         return processo
     }
 }
