@@ -1,0 +1,232 @@
+/* homepage.css */
+:root {
+  --primaryHome: #5d93e1;
+  --secondaryHome: #8bb3f4;
+  --accentHome: #b8d1ff;
+  --backgroundHome: #f5f9ff;
+  --textHome: #3a4a6b;
+  --successHome: #6dd0a3;
+  --warningHome: #ffd166;
+  --errorHome: #ff8a8a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+
+body {
+  background-color: var(--backgroundHome);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.homepage {
+  position: relative;
+  transition: all 0.5s ease;
+  overflow-x: hidden;
+}
+
+.homepage * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.homepage body {
+  overflow-y: auto;
+  background: var(--backgroundHome);
+}
+
+.homepage.show-scheduler {
+  opacity: 0;
+  transform: translateY(-20px);
+  visibility: hidden;
+  transition: all 0.5s ease;
+}
+
+.homepage header {
+  background: linear-gradient(
+    135deg,
+    var(--primaryHome) 0%,
+    var(--secondaryHome) 100%
+  );
+  color: white;
+  padding: 4rem 2rem;
+  text-align: center;
+  clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+  margin-bottom: 3rem;
+}
+
+.homepage header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.homepage .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  transition: inherit;
+}
+
+.description {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 1.25rem;
+  margin: 0.75rem 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.description h2 {
+  color: var(--primaryHome);
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.description p {
+  color: var(--textHome);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+.developers-container {
+  margin: 1.5rem 0;
+  width: 100%;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2rem;
+  color: var(--primaryHome);
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.section-title::after {
+  content: "";
+  width: 60px;
+  height: 3px;
+  background: var(--accentHome);
+  position: absolute;
+  bottom: -1rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.developers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2.5rem;
+  padding: 2rem;
+}
+
+.developer-card {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.developer-card:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.developer-photo {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  overflow: hidden;
+  border: 3px solid var(--secondaryHome);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.developer-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.developer-card h3 {
+  color: var(--primaryHome);
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
+}
+
+.developer-card p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0.3rem 0;
+}
+
+.button-container {
+  text-align: center;
+  margin: 2.5rem 0;
+  padding: 0 1.5rem;
+}
+
+.action-button {
+  display: inline-block;
+  background-color: var(--primaryHome);
+  color: white;
+  padding: 0.8rem 2rem;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(93, 147, 225, 0.3);
+}
+
+.action-button:hover {
+  background-color: var(--secondaryHome);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(93, 147, 225, 0.4);
+}
+
+.homepage footer {
+  background: var(--primaryHome);
+  color: white;
+  text-align: center;
+  padding: 2rem;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  header {
+    padding: 3rem 1.5rem;
+  }
+
+  .description {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  .developers-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .action-button {
+    padding: 0.7rem 1.8rem;
+    font-size: 1rem;
+  }
+}
