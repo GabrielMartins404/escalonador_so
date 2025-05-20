@@ -14,37 +14,134 @@ import {
 // Modal de Informação
 const InfoModal = ({ isOpen, section, onClose }) => {
   if (!isOpen) return null;
+
   const infoMap = {
     create: {
-      title: 'Criar Processo',
-      text: 'Esta seção permite que você crie novos processos. Defina a prioridade do processo (de 1 a 4), o tipo (CPU-bound ou I/O-bound) e o tempo de execução (duração) em segundos. O processo será adicionado à fila de acordo com sua prioridade.'
+      title: 'Criação de Processo',
+      body: [
+        {
+          type: 'text',
+          content: 'Aqui você configura um novo processo para o escalonador:'
+        },
+        {
+          type: 'list',
+          items: [
+            'Prioridade: de 1 (máxima) a 4 (mínima), determinando a fila de pronto.',
+            'Tipo: CPU-bound (executa até concluir ou esgotar o quantum) ou I/O-bound (depois de cada quantum, retorna à fila de espera para I/O).',
+            'Burst: tempo total de CPU desejado, em segundos.'
+          ]
+        },
+        {
+          type: 'text',
+          content: 'Ao clicar em “Adicionar”, o processo recebe um PID único, status “Pronto” e entra na fila correspondente.'
+        }
+      ]
     },
     queues: {
-      title: 'Filas de Prioridade',
-      text: 'Existem 4 filas de prioridade, numeradas de 1 (mais alta) a 4 (mais baixa). O escalonador sempre seleciona o próximo processo da fila de maior prioridade que não está vazia. As filas são usadas para garantir que processos mais importantes sejam executados primeiro.'
+      title: 'Filas de Prioridade e Quantum',
+      body: [
+        {
+          type: 'text',
+          content: 'O escalonador mantém quatro filas de pronto, uma para cada nível de prioridade (1 a 4).'
+        },
+        {
+          type: 'list',
+          items: [
+            'A cada ciclo, calculamos quanto do tempo total de CPU cabe a cada fila ativa.',
+            'Dividimos esse quantum igualmente entre os processos daquela fila (time slice).',
+            'Filas de maior prioridade recebem fatias maiores de CPU, garantindo atendimento preferencial.'
+          ]
+        }
+      ]
     },
     execution: {
       title: 'Execução e Espera',
-      text: '"Em Execução" significa que o processo está sendo processado pela CPU. "Em Espera" significa que o processo está aguardando na fila para ser executado. Quando um processo é executado, seu tempo de execução diminui até que termine ou seja interrompido.'
+      body: [
+        {
+          type: 'list',
+          items: [
+            '"Em Execução": processo que está usando a CPU no momento.',
+            '"Em Espera": processo I/O-bound aguardando conclusão de I/O.',
+            'Quando o processo esgota seu quantum sem terminar, retorna a “Pronto”.',
+            'Se for I/O-bound, após quantum vai para “Espera”; quando I/O finaliza, volta para “Pronto”.',
+            'Se concluir o burst antes do quantum, vai para “Concluídos”.'
+          ]
+        }
+      ]
     },
     pending: {
-      title: 'Tabela de Processos Pendentes',
-      text: 'A tabela exibe todos os processos que estão no sistema, incluindo aqueles que já foram concluídos. Para cada processo, é mostrado o PID, prioridade, tempo restante de execução, estado (em execução, esperando ou concluído), e tempo de espera.'
+      title: 'Processos Pendentes',
+      body: [
+        {
+          type: 'text',
+          content: 'Exibe todos os processos em “Pronto” (todas as filas) e em “Espera”.'
+        },
+        {
+          type: 'list',
+          items: [
+            'PID e tipo (CPU/I/O).',
+            'Prioridade (1–4).',
+            'Tempo desde a criação.',
+            'Tempo restante de CPU (burst – executado).',
+            'Estado atual (Pronto / Em Execução / Em Espera).',
+            'Tempo total de espera para I/O.'
+          ]
+        }
+      ]
     },
     completed: {
-      title: 'Tabela de Processos Concluídos',
-      text: 'A tabela exibe todos os processos que estão no sistema, incluindo aqueles que já foram concluídos. Para cada processo, é mostrado o PID, prioridade, tempo restante de execução, estado (em execução, esperando ou concluído), e tempo de espera.'
+      title: 'Processos Concluídos',
+      body: [
+        {
+          type: 'text',
+          content: 'Lista os processos que terminaram sua execução.'
+        },
+        {
+          type: 'list',
+          items: [
+            'PID e tipo (CPU/I/O).',
+            'Prioridade.',
+            'Tempo total de CPU consumido.',
+            'Tempo total de espera (I/O).',
+            'Momento de conclusão.'
+          ]
+        }
+      ]
     }
   };
-  const info = infoMap[section] || {};
+
+  const info = infoMap[section] || { title: '', body: [] };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <motion.div className="modal-content" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={e => e.stopPropagation()}>
+      <motion.div
+        className="modal-content"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h3>{info.title}</h3>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <button className="close-btn" onClick={onClose}>
+            <X size={20} />
+          </button>
         </div>
-        <div className="modal-body"><p>{info.text}</p></div>
+        <div className="modal-body">
+          {info.body.map((block, idx) => {
+            if (block.type === 'text') {
+              return <p key={idx}>{block.content}</p>;
+            } else if (block.type === 'list') {
+              return (
+                <ul key={idx}>
+                  {block.items.map((item, i2) => (
+                    <li key={i2}>{item}</li>
+                  ))}
+                </ul>
+              );
+            }
+            return null;
+          })}
+        </div>
       </motion.div>
     </div>
   );
@@ -53,21 +150,32 @@ const InfoModal = ({ isOpen, section, onClose }) => {
 
 // Modal de Histórico
 const HistoryModal = ({ isOpen, onClose, movementLog, onClear }) => {
-
   if (!isOpen) return null;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <motion.div className="modal-content" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3><List size={18} /> Histórico de Processos</h3>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
-          <button className="clear-btn" onClick={onClear}><Trash2 size={16} /> Limpar</button>
         </div>
-        <div className="log-table">
-          <div className="log-header"><span>PID</span><span>Evento</span><span>Horário</span></div>
-          {movementLog.map((log, index) => (
-            <div key={index} className="log-row"><span>#{log.pid}</span><span>{log.evento}</span><span>{log.horario}</span></div>
-          ))}
+
+        <div className="modal-body">
+          <div className="log-table">
+            <div className="log-header"><span>PID</span><span>Evento</span><span>Horário</span></div>
+            {movementLog.map((log, index) => (
+              <div key={index} className="log-row">
+                <span>#{log.pid}</span><span>{log.evento}</span><span>{log.horario}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          <button className="clear-btn" onClick={onClear}>
+            <Trash2 size={16} />
+            Limpar Histórico
+          </button>
         </div>
       </motion.div>
     </div>
@@ -186,16 +294,12 @@ const Queue = ({ prioridade, processos, onRemove }) => {
 
 // Escalonador
 const Escalonador = () => {
-
   const escalonadorRef = useRef(new EscalonadorClass(10, 10));
   const escalonador = escalonadorRef.current
-
   const [filaEspera, setFilaEspera] = useState([])
   const [processoEmExecucao, setProcessoEmExecucao] = useState(null)
-
   const [tempoDeSimulacao, setTempoDeSimulacao] = useState(0)
-
-  const [form, setForm] = useState({ prioridade: 1, type: 'CPU-bound', time: '' });
+  const [form, setForm] = useState({ prioridade: 1, type: 'CPU-bound', time: '1' });
   const [log, setLog] = useState([]);
   const [refresh, setRefresh] = useState(0) //Isso serve unicamente para forçar uma renderização
   const [running, setRunning] = useState(false);
@@ -268,22 +372,42 @@ const Escalonador = () => {
       <section className="control-panel">
         <div className="section-header"><h2>Criar Processo</h2><Info className="info-icon" size={16} onClick={() => openInfo('create')} /></div>
         <div className="form-container">
-          <input
-            type="number"
-            value={form.prioridade}
-            onChange={e => {
-              const value = parseInt(e.target.value, 10);
-              if (value >= 1 && value <= 4) {
-                setForm({ ...form, prioridade: value });
-              }
-            }}
-            placeholder="Prioridade (1–4)"
-          />
-          <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
-            <option value="CPU-bound">CPU-bound</option>
-            <option value="I/O-bound">I/O-bound</option>
-          </select>
-          <input type="number" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} placeholder="Burst (s)" />
+          <div className="input-group">
+            <input
+              type="number"
+              value={form.prioridade}
+              onChange={e => {
+                const value = parseInt(e.target.value, 10);
+                if (value >= 1 && value <= 4) {
+                  setForm({ ...form, prioridade: value });
+                }
+              }}
+              placeholder="Prioridade (1–4)"
+            />
+            <p className="input-hint">Prioridade: Número inteiro entre 1 (mais alta) e 4 (mais baixa)</p>
+          </div>
+
+          <div className="input-group">
+            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+              <option value="CPU-bound">CPU-bound</option>
+              <option value="I/O-bound">I/O-bound</option>
+            </select>
+            <p className="input-hint">Tipo: Processos intensivos em CPU ou operações de I/O</p>
+          </div>
+
+          <div className="input-group">
+            <input
+              type="number"
+              value={form.time}
+              onChange={e => {
+                const value = Math.max(1, parseInt(e.target.value) || 1);
+                setForm({ ...form, time: value });
+              }}
+              placeholder="Burst (s)"
+              min="1"
+            />
+            <p className="input-hint">Burst: Tempo de execução em segundos (mínimo 1)</p>
+          </div>
           <button className="add-btn" onClick={handleAdd}><Plus size={14} /> Adicionar</button>
           <button className={`control-btn ${running ? 'pause' : 'start'}`} onClick={() => setRunning(!running)}>{running ? <><Pause size={14} /> Pausar</> : <><Play size={14} /> Iniciar</>}</button>
         </div>
@@ -309,6 +433,7 @@ const Escalonador = () => {
           <List size={16} /> Ver Histórico
         </button>
       </section>
+
 
       {/* Execução/Espera */}
       <section className="execution-waiting-section">
