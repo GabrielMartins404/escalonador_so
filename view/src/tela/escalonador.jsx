@@ -329,6 +329,21 @@ const Escalonador = () => {
     return () => clearInterval(interval);
   }, [running]);
 
+  const handleReset = () => {
+    // Recria a instância do escalonador
+    escalonadorRef.current = new EscalonadorClass(10, 10);
+
+    // Reseta todos os estados
+    setFilaEspera([]);
+    setProcessoEmExecucao(null);
+    setTempoDeSimulacao(0);
+    setForm({ prioridade: 1, type: 'CPU-bound', time: '1' });
+    setLog([]);
+    setRunning(false);
+    setPid(1);
+    setRefresh(prev => prev + 1);
+  };
+
 
   // Adicionar processo
   const handleAdd = () => {
@@ -384,7 +399,7 @@ const Escalonador = () => {
               }}
               placeholder="Prioridade (1–4)"
             />
-            <p className="input-hint">Prioridade: Número inteiro entre 1 (mais alta) e 4 (mais baixa)</p>
+            <p className="input-hint">Prioridade: Número inteiro entre 1 (mais baixa) e 4 (mais alta)</p>
           </div>
 
           <div className="input-group">
@@ -551,6 +566,10 @@ const Escalonador = () => {
       {/* Modais */}
       <HistoryModal isOpen={showHist} onClose={() => setShowHist(false)} movementLog={log} onClear={clearHistory} />
       <InfoModal isOpen={showInfo} section={infoSection} onClose={() => setShowInfo(false)} />
+      <button className="reset-btn" onClick={handleReset}>
+        <Trash2 size={18} />
+        Reiniciar Sistema
+      </button>
     </div>
   );
 };

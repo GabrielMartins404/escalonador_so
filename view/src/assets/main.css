@@ -481,12 +481,16 @@
   }
 
   .clear-btn {
-    padding: 0.45rem 0.45rem;
-    font-weight: 500;
+    padding: 0.3rem 0.3rem;
+    font-weight: 600;
     transition: all 0.2s ease;
     display: flex;
+    border-radius: 4px;
     align-items: center;
     gap: 0.5rem;
+    background: var(--error);
+    color: white;
+    border: none;
   }
 
   .clear-btn:hover {
@@ -533,4 +537,24 @@
 
 .remove-btn-card {
   margin-left: 0.25rem;
+}
+
+.reset-btn {
+  background: var(--error);
+  color: white;
+  padding: 0.5rem 1rem;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  justify-self: center;
+  margin-bottom: 20px;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  border: none;
+}
+
+.reset-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
 }
